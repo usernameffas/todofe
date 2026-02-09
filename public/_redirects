@@ -1,0 +1,2 @@
+/api/* http://Todolist-env.eba-mp3p7ptz.eu-north-1.elasticbeanstalk.com/api/:splat 200
+/*    /index.html   200
