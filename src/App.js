@@ -8,45 +8,66 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
 import api from "./utils/api";
-import TodoItem from "./components/TodoItem";
 
 function App() {
   const [todolist, setTodolist] = useState([]);
-  const [task, setTask] = useState(""); // 입력값 상태 추가
+  const [task, setTask] = useState("");
 
   const getTasks = async () => {
     const response = await api.get('/tasks');
-    console.log("rrrrrrr", response);
-    setTodolist(response.data.data); // todolist 업데이트
+    setTodolist(response.data.data);
   };
 
   const addTask = async () => {
-    if (!task.trim()) return; // 빈 값 방지
+    if (!task.trim()) return;
     
     try {
       const response = await api.post("/tasks", { 
         task, 
         isComplete: false 
       });
-      console.log("추가 성공:", response);
-      setTask(""); // 입력창 초기화
-      getTasks(); // 목록 새로고침
+      setTask("");
+      getTasks();
     } catch (error) {
       console.error("추가 실패:", error);
     }
   };
 
+  // ▼▼▼ [새로 추가해야 할 부분] 삭제 함수 ▼▼▼
   const deleteTask = async (id) => {
     try {
-      const response = await api.delete(`/tasks/${id}`);  
-      console.log("삭제 성공:", response);
-      getTasks(); // 목록 새로고침
+      console.log("삭제할 아이디:", id); // 이게 찍히는지 확인해야 함
+      // 백엔드 주소로 삭제 요청을 보냄 (주소 뒤에 id 붙임)
+      const response = await api.delete(`/tasks/${id}`);
+      
+      if(response.status === 200){
+          getTasks(); // 삭제 성공하면 목록 다시 불러오기
+      }
     } catch (error) {
-      console.error("삭제 실패:", error);
+      console.error("삭제 에러:", error);
+    }
+  };
+  // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+  const toggleComplete = async (id) => {
+    try {
+      // 1. id로 해당 아이템을 찾는다
+      const task = todolist.find((item) => item._id === id); 
+      
+      // 2. 현재 상태(isComplete)를 반대로 뒤집어서 서버에 보낸다 (true -> false, false -> true)
+      const response = await api.put(`/tasks/${id}`, {
+        isComplete: !task.isComplete,
+      });
+
+      // 3. 성공하면 목록을 새로고침한다
+      if (response.status === 200) {
+        getTasks();
+      }
+    } catch (error) {
+      console.log("error", error);
     }
   };
 
-  
 
   useEffect(() => {
     getTasks();
@@ -71,8 +92,13 @@ function App() {
           </button>
         </Col>
       </Row>
-      
-      <TodoBoard todolist={todolist} deleteTask={deleteTask} /> 
+
+      {/* ▼▼▼ TodoBoard에게 삭제 기능(리모컨)을 넘겨줘야 함! ▼▼▼ */}
+      <TodoBoard 
+        todolist={todolist} 
+        deleteTask={deleteTask} 
+        toggleComplete={toggleComplete}
+      />
     </Container>
   );
 }
